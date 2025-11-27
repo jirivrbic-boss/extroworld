@@ -32,7 +32,7 @@ function toForm(body: CreateShipmentBody, apiPassword: string) {
 	// Výdejní místo Zásilkovny
 	params.set("packetAttributes[addressId]", body.pickupPointId);
 	// Hodnota zásilky (pojištění)
-	params.set("packetAttributes[value]", String(Math.max(0, Math.round(body.valueCZK)))));
+	params.set("packetAttributes[value]", String(Math.max(0, Math.round(body.valueCZK))));
 	// Hmotnost v gramech (většina integrací Packety očekává g)
 	const weightGrams = Math.max(1, Math.round(body.weightKg * 1000));
 	params.set("packetAttributes[weight]", String(weightGrams));
