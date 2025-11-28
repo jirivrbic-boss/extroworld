@@ -4,15 +4,7 @@ export const dynamic = "force-dynamic";
 
 async function getRemoteScript(url: string) {
 	try {
-		const res = await fetch(url, {
-			cache: "no-store",
-			headers: {
-				"User-Agent":
-					"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-				Accept: "*/*",
-				Referer: "https://localhost/"
-			}
-		});
+		const res = await fetch(url, { cache: "no-store" });
 		if (!res.ok) throw new Error(`HTTP ${res.status}`);
 		return await res.text();
 	} catch (e) {
@@ -21,12 +13,19 @@ async function getRemoteScript(url: string) {
 }
 
 export async function GET(req: Request) {
-	// Try v6 first, then v7 as fallback
-	const v6 = await getRemoteScript("https://widget.packeta.com/v6/www/js/packetaWidget.js");
-	const code =
-		v6 ??
-		(await getRemoteScript("https://widget.packeta.com/v7/www/js/packetaWidget.js")) ??
-		"console.error('Packeta widget could not be loaded.');";
+	// Vyzkoušíme několik známých cest (Packeta čas od času mění název souboru)
+	const candidates = [
+		"https://widget.packeta.com/v6/www/js/packetaWidget.js",
+		"https://widget.packeta.com/v7/www/js/packetaWidget.js",
+		"https://widget.packeta.com/v7/www/js/library.js",
+		"https://widget.packeta.com/v6/www/js/library.js"
+	];
+	let code: string | null = null;
+	for (const u of candidates) {
+		code = await getRemoteScript(u);
+		if (code) break;
+	}
+	code = code ?? "console.error('Packeta widget could not be loaded.');";
 
 	return new NextResponse(code, {
 		status: 200,
@@ -36,5 +35,4 @@ export async function GET(req: Request) {
 		}
 	});
 }
-
 
