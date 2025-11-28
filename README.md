@@ -20,6 +20,18 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Environment variables
+
+Create a `.env.local` file (not committed) and set:
+
+```
+STRIPE_SECRET_KEY=__YOUR_STRIPE_SECRET_KEY__
+```
+
+On Vercel, set the same variable in Project → Settings → Environment Variables and redeploy.
+
+If používáte GitHub Secrets, vytvořte `STRIPE_SECRET_KEY` v repo a na Vercelu ho můžete importovat do Environment Variables (nebo nastavit ručně).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
