@@ -7,6 +7,8 @@ type Packeta = { id?: string; name?: string; street?: string; city?: string; zip
 type Address = { street?: string; city?: string; zip?: string; country?: string } | null;
 type Customer = { firstName?: string; lastName?: string; email?: string; phone?: string } | null;
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
 	try {
 		const { items, discountPercent = 0, userId, shippingMethod, packeta, customer, billingAddress, shippingAddress } =
