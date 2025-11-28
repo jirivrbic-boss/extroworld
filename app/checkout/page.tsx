@@ -71,8 +71,8 @@ export default function CheckoutPage() {
 		let scriptEl: HTMLScriptElement | null = null;
 		scriptEl = tryLoad("/api/packeta/widget", () => {
 			// 2) fallback – přímo na CDN (v6/v7)
-			tryLoad("https://widget.packeta.com/v6/www/js/packetaWidget.js", () => {
-				tryLoad("https://widget.packeta.com/v7/www/js/packetaWidget.js", () => {
+			tryLoad("https://widget.packeta.com/v6/www/js/library.js", () => {
+				tryLoad("https://widget.packeta.com/v7/www/js/library.js", () => {
 					setPacketaMsg("Nepodařilo se načíst widget Zásilkovny. Zkus vypnout blokátory a obnovit stránku.");
 				});
 			});
@@ -108,11 +108,21 @@ export default function CheckoutPage() {
 			setPacketaMsg("Widget ještě není připravený. Počkej chvíli a zkus to znovu.");
 			return;
 		}
-		const apiKey = process.env.NEXT_PUBLIC_PACKETA_WIDGET_API_KEY || ""; // nastav v .env.local
-		if (!apiKey) {
-			setPacketaMsg("Chybí NEXT_PUBLIC_PACKETA_WIDGET_API_KEY. Doplň klíč do .env.local.");
-			return;
-		}
+		// Použij env klíč, případně fallback na dodaný veřejný widget klíč
+		const apiKey = process.env.NEXT_PUBLIC_PACKETA_WIDGET_API_KEY || "e312ce326d417840";
+		// Nastavení podle požadavku
+		const packetaOptions: any = {
+			country: "cz,sk",
+			language: "cs",
+			valueFormat: '"Packeta",id,carrierId,carrierPickupPointId,name,city,street',
+			view: "modal",
+			vendors: [
+				{ country: "cz", group: "zbox", selected: true },
+				{ country: "cz", selected: true },
+				{ country: "sk", selected: true },
+				{ country: "sk", group: "zbox", selected: true }
+			]
+		};
 		try {
 			w.Packeta.Widget.pick(apiKey, (point: any) => {
 				if (!point) return;
@@ -123,7 +133,7 @@ export default function CheckoutPage() {
 					city: point.city || point.pickupPoint?.city,
 					zip: point.zip || point.pickupPoint?.zip
 				});
-			}, { country: "cz" });
+			}, packetaOptions);
 		} catch (e) {
 			console.error("Packeta widget error:", e);
 		}
