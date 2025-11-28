@@ -32,10 +32,12 @@ export default function CheckoutPage() {
 		return () => unsub();
 	}, []);
 
-	const stripePromise = useMemo(
-		() => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""),
-		[]
-	);
+	const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
+	const stripePromise = useMemo(() => {
+		// Zabraň volání loadStripe s prázdným klíčem (vyhazuje IntegrationError)
+		if (!publishableKey) return null;
+		return loadStripe(publishableKey);
+	}, [publishableKey]);
 
 	// Load Packeta (Zásilkovna) widget script
 	useEffect(() => {
@@ -49,7 +51,7 @@ export default function CheckoutPage() {
 			const s = document.createElement("script");
 			s.src = url;
 			s.async = true;
-			s.crossOrigin = "anonymous";
+			// Nevnucuj CORS pro cizí doménu – některé CDN (Packeta) nevrací CORS hlavičky a načtení by selhalo.
 			s.onload = () => {
 				setTimeout(() => {
 					if ((window as any).Packeta?.Widget) {
