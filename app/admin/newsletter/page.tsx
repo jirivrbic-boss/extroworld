@@ -95,16 +95,14 @@ export default function AdminNewsletterPage() {
 		URL.revokeObjectURL(url);
 	};
 
-	const copySelected = async () => {
-		if (!selectedEmailsText) return;
+	const copyText = async (text: string) => {
+		if (!text) return;
 		try {
-			await navigator.clipboard.writeText(selectedEmailsText);
-			// volitelná vizuální odezva
+			await navigator.clipboard.writeText(text);
 			alert("Zkopírováno do schránky.");
 		} catch {
-			// fallback
 			const ta = document.createElement("textarea");
-			ta.value = selectedEmailsText;
+			ta.value = text;
 			document.body.appendChild(ta);
 			ta.select();
 			document.execCommand("copy");
@@ -112,6 +110,16 @@ export default function AdminNewsletterPage() {
 			alert("Zkopírováno do schránky.");
 		}
 	};
+
+	const copySelected = async () => {
+		if (!selectedEmailsText) return;
+		await copyText(selectedEmailsText);
+	};
+
+	const allEmailsText = useMemo(
+		() => Array.from(new Set(list.map((s) => String(s.email || "").trim().toLowerCase()).filter(Boolean))).join("\n"),
+		[list]
+	);
 
 	const allChecked = useMemo(() => list.length > 0 && selected.size === list.length, [list, selected]);
 	const toggleAll = () => {
@@ -142,6 +150,9 @@ export default function AdminNewsletterPage() {
 				</button>
 				<button onClick={copySelected} disabled={!selected.size} className="rounded border border-white/15 px-3 py-1 text-xs text-white hover:bg-white/10 disabled:opacity-60">
 					Kopírovat vybrané
+				</button>
+				<button onClick={() => copyText(allEmailsText)} disabled={!list.length} className="rounded border border-white/15 px-3 py-1 text-xs text-white hover:bg-white/10 disabled:opacity-60">
+					Kopírovat vše
 				</button>
 			</div>
 			<div className="rounded border border-white/10 bg-zinc-900 p-4">
