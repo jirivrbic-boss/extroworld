@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminStats from "@/components/admin/Stats";
+import SeedTestOrder from "@/components/admin/SeedTestOrder";
 
 export default async function AdminDashboardPage() {
 	const isAuthed = (await cookies()).get("extro_admin")?.value === "1";
@@ -21,6 +22,9 @@ export default async function AdminDashboardPage() {
 				<Card title="Věrnostní pusinky" href="/admin/loyalty" />
 				<Card title="Newsletter e‑maily" href="/admin/newsletter" />
 				<Card title="Stripe kupony" href="/admin/stripe-coupons" />
+			</div>
+			<div className="mt-8">
+				<SeedTestOrder defaultUid={process.env.ADMIN_UID} />
 			</div>
 			<form action="/api/admin/logout" method="POST" className="mt-8">
 				<button className="rounded border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">
