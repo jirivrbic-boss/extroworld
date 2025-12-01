@@ -60,11 +60,6 @@ export default function LockPage() {
         nav, footer { display: none !important; }
       `}</style>
       <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-4 py-10">
-        <img
-          src="/media/logo extroworld 3d.gif"
-          alt="EXTROWORLD"
-          className="mb-6 h-16 w-auto"
-        />
         <h1 className="mb-4 text-center text-3xl font-extrabold tracking-wide md:text-5xl">
           VÍTÁ VÁS EXTROWORLD
         </h1>
