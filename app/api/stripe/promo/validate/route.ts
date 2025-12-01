@@ -1,0 +1,37 @@
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+export async function POST(req: Request) {
+	try {
+		const { code }: { code?: string } = await req.json();
+		if (!process.env.STRIPE_SECRET_KEY) {
+			return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
+		}
+		if (!code || !code.trim()) {
+			return NextResponse.json({ error: "Chybí kód." }, { status: 400 });
+		}
+		const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+		const list = await stripe.promotionCodes.list({
+			code: code.trim(),
+			active: true,
+			limit: 1,
+			expand: ["data.coupon"]
+		});
+		const promo = list.data?.[0] ?? null;
+		if (!promo || !promo.coupon) {
+			return NextResponse.json({ ok: false, found: false }, { status: 404 });
+		}
+		const pct = (promo.coupon as Stripe.Coupon).percent_off ?? null;
+		if (!pct || pct <= 0) {
+			return NextResponse.json({ ok: false, found: true, percent: 0 }, { status: 404 });
+		}
+		return NextResponse.json({ ok: true, found: true, percent: Math.round(pct) });
+	} catch (e: any) {
+		return NextResponse.json({ error: e?.message ?? "Chyba validace." }, { status: 400 });
+	}
+}
+
+

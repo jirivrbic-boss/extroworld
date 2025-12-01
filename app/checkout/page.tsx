@@ -186,18 +186,41 @@ export default function CheckoutPage() {
 
 	const applyCode = async () => {
 		setCodeMsg(null);
-		if (!uid) {
-			setCodeMsg("Přihlas se do účtu.");
+		const trimmed = code.trim().toUpperCase();
+		if (!trimmed) {
+			setCodeMsg("Zadej kód.");
 			return;
 		}
-		const qC = query(collection(db, "loyaltyCodes"), where("userId", "==", uid), where("code", "==", code.toUpperCase()), where("used", "==", false));
-		const cSnap = await getDocs(qC);
-		if (cSnap.empty) {
-			setCodeMsg("Kód není platný.");
-			return;
+		// 1) Věrnostní 100% kód (vázaný na uživatele)
+		if (uid) {
+			const qC = query(
+				c ollection(db, "loyaltyCodes"),
+				where("userId", "==", uid),
+				where("code", "==", trimmed),
+				where("used", "==", false)
+			);
+			const cSnap = await getDocs(qC);
+			if (!cSnap.empty) {
+				applyDiscount({ code: trimmed, percent: 100 });
+				setCodeMsg("Kód použit. Sleva 100% aplikována.");
+				return;
+			}
 		}
-		applyDiscount({ code: code.toUpperCase(), percent: 100 });
-		setCodeMsg("Kód použit. Sleva 100% aplikována.");
+		// 2) Stripe promo kód (procenta)
+		try {
+			const r = await fetch("/api/stripe/promo/validate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ code: trimmed })
+			});
+			const d = await r.json();
+			if (r.ok && d?.ok && d?.percent > 0) {
+				applyDiscount({ code: trimmed, percent: Math.min(100, Math.max(1, Number(d.percent))) });
+				setCodeMsg(`Kód použit. Sleva ${d.percent}% aplikována.`);
+				return;
+			}
+		} catch {}
+		setCodeMsg("Kód není platný.");
 	};
 
 	const placeOrder = async (opts?: { stripePaymentId?: string }) => {
