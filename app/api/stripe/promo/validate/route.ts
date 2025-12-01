@@ -13,6 +13,10 @@ export async function POST(req: Request) {
 		if (!code || !code.trim()) {
 			return NextResponse.json({ error: "Chybí kód." }, { status: 400 });
 		}
+		// Speciální master kód: 100% na celou objednávku (vč. dopravy)
+		if (code.trim().toUpperCase() === "EXTRO100WORLD") {
+			return NextResponse.json({ ok: true, found: true, percent: 100, special: true });
+		}
 		const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 		const list = await stripe.promotionCodes.list({
 			code: code.trim(),

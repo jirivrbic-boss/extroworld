@@ -556,7 +556,13 @@ export default function CheckoutPage() {
 				<div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
 					<span className="text-sm text-zinc-300">Celkem k platbě</span>
 					<span className="text-lg font-semibold text-white">
-						{Math.max(0, (items.reduce((s, i) => s + i.price * i.quantity, 0) * (1 - (discount?.percent ?? 0) / 100)) + shippingFee) | 0} Kč
+						{(() => {
+							const itemsTotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+							const gross = itemsTotal + shippingFee;
+							const percent = discount?.percent ?? 0;
+							const total = Math.max(0, Math.round(gross * (1 - percent / 100)));
+							return total | 0;
+						})()} Kč
 					</span>
 				</div>
 				<div className="mt-4 flex items-center justify-between">

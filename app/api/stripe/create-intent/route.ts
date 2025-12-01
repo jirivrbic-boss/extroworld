@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 		const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 		// Compute amount server-side from Stripe Prices (avoid trusting client prices)
-		let amount = 0;
+		let itemsAmount = 0;
 		for (const it of items ?? []) {
 			if (!it.priceId) continue;
 			const price = await stripe.prices.retrieve(it.priceId);
@@ -39,10 +39,7 @@ export async function POST(req: Request) {
 				continue;
 			}
 			const qty = Math.max(1, Number(it.quantity) || 1);
-			amount += price.unit_amount * qty;
-		}
-		if (discountPercent && discountPercent > 0) {
-			amount = Math.max(0, Math.round((amount * (100 - discountPercent)) / 100));
+			itemsAmount += price.unit_amount * qty;
 		}
 
 		// Add shipping fee automatically from Stripe Shipping Rates (e.g., Zásilkovna)
@@ -83,7 +80,11 @@ export async function POST(req: Request) {
 				// ignore, shipping stays zero
 			}
 		}
-		amount += shippingAmount;
+		// Spočítej celkovou částku (v haléřích)
+		let amount = itemsAmount + shippingAmount;
+		if (discountPercent && discountPercent > 0) {
+			amount = Math.max(0, Math.round((amount * (100 - discountPercent)) / 100));
+		}
 
 		// Enforce Stripe minimum charge for CZK (10 CZK = 1000 haléřů)
 		if (amount > 0 && amount < 1000) {
