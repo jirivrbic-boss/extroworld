@@ -20,8 +20,9 @@ export const metadata: Metadata = {
 	description:
 		"Nejvíce unikátní a kontroverzní značka oblečení v Česku. Dosáhni svých snů s Extroworld.",
 	icons: [
-		{ rel: "icon", url: "/media/ikona webu.png" },
-		{ rel: "shortcut icon", url: "/media/ikona webu.png" }
+		{ rel: "icon", url: "/media/ikona%20webu.png", type: "image/png" },
+		{ rel: "shortcut icon", url: "/media/ikona%20webu.png", type: "image/png" },
+		{ rel: "apple-touch-icon", url: "/media/ikona%20webu.png" }
 	],
 };
 
