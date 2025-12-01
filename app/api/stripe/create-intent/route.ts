@@ -45,6 +45,46 @@ export async function POST(req: Request) {
 			amount = Math.max(0, Math.round((amount * (100 - discountPercent)) / 100));
 		}
 
+		// Add shipping fee automatically from Stripe Shipping Rates (e.g., Zásilkovna)
+		let shippingAmount = 0;
+		let shippingRateId: string | undefined;
+		if (shippingMethod === "zasilkovna") {
+			try {
+				// Prefer explicit env with Shipping Rate ID to be deterministic
+				const envRateId = process.env.STRIPE_ZASILKOVNA_RATE_ID;
+				if (envRateId) {
+					const rate = await stripe.shippingRates.retrieve(envRateId);
+					const amt = (rate as any)?.fixed_amount?.amount;
+					const curr = (rate as any)?.fixed_amount?.currency;
+					if (typeof amt === "number" && curr === "czk") {
+						shippingAmount = amt;
+						shippingRateId = rate.id;
+					}
+				} else {
+					// Fallback – find first active CZK rate containing "zasil" in name/description
+					const rates = await stripe.shippingRates.list({ active: true, limit: 25 });
+					const found =
+						rates.data.find(
+							(r: any) =>
+								(r.display_name || r.description || "")
+									.toLowerCase()
+									.includes("zasil")
+						) || rates.data.find((r: any) => (r as any)?.fixed_amount?.currency === "czk");
+					if (found) {
+						const amt = (found as any)?.fixed_amount?.amount;
+						const curr = (found as any)?.fixed_amount?.currency;
+						if (typeof amt === "number" && curr === "czk") {
+							shippingAmount = amt;
+							shippingRateId = found.id;
+						}
+					}
+				}
+			} catch {
+				// ignore, shipping stays zero
+			}
+		}
+		amount += shippingAmount;
+
 		// Enforce Stripe minimum charge for CZK (10 CZK = 1000 haléřů)
 		if (amount > 0 && amount < 1000) {
 			return NextResponse.json(
@@ -68,6 +108,8 @@ export async function POST(req: Request) {
 			metadata: {
 				userId: userId || "",
 				shippingMethod: shippingMethod || "",
+				shippingRateId: shippingRateId || "",
+				shippingAmountHaler: String(shippingAmount || 0),
 				packetaId: packeta?.id || "",
 				packetaName: packeta?.name || "",
 				packetaStreet: packeta?.street || "",
