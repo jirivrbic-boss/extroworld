@@ -22,11 +22,19 @@ export async function POST(req: Request) {
 		});
 		const promo = list.data?.[0] ?? null;
 		// Typy Stripe v některých verzích nemají 'coupon' v PromotionCode – použijeme safe cast
-		const coupon: any = (promo as any)?.coupon;
-		if (!promo || !coupon) {
+		let coupon: any = (promo as any)?.coupon;
+		if (!promo) {
 			return NextResponse.json({ ok: false, found: false }, { status: 404 });
 		}
-		const pct = typeof coupon === "object" ? (coupon.percent_off ?? null) : null;
+		// Pokud promotion code vrací jen ID kuponu, načti detail
+		if (typeof coupon === "string") {
+			try {
+				coupon = await stripe.coupons.retrieve(coupon);
+			} catch {
+				coupon = null;
+			}
+		}
+		const pct = coupon && typeof coupon === "object" ? (coupon.percent_off ?? null) : null;
 		if (!pct || pct <= 0) {
 			return NextResponse.json({ ok: false, found: true, percent: 0 }, { status: 404 });
 		}
