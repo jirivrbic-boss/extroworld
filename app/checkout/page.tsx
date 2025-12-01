@@ -14,7 +14,7 @@ export default function CheckoutPage() {
 	const { items, total, shippingMethod, clear, discount, applyDiscount } = useCartStore();
 	const setShipping = useCartStore((s) => s.setShipping);
 	const [uid, setUid] = useState<string | null>(null);
-	const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+	const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
 	const [cust, setCust] = useState({ firstName: "", lastName: "", email: "", phone: "" });
 	const [billing, setBilling] = useState({ street: "", city: "", zip: "", country: "Česko" });
 	const [ship, setShip] = useState({ street: "", city: "", zip: "", country: "Česko", sameAsBilling: true });
@@ -26,6 +26,7 @@ export default function CheckoutPage() {
 	const [codeMsg, setCodeMsg] = useState<string | null>(null);
 	const router = useRouter();
 	const [clientSecret, setClientSecret] = useState<string | null>(null);
+	const [shippingFee, setShippingFee] = useState<number>(0); // Kč
 
 	useEffect(() => {
 		const unsub = onAuthStateChanged(auth, (u) => setUid(u?.uid ?? null));
@@ -102,6 +103,26 @@ export default function CheckoutPage() {
 		};
 	}, []);
 
+	// Načti cenu dopravy ze Stripe Shipping Rate (pro zobrazení v souhrnu)
+	useEffect(() => {
+		const loadRate = async () => {
+			if (shippingMethod !== "zasilkovna") {
+				setShippingFee(0);
+				return;
+			}
+			try {
+				const r = await fetch("/api/stripe/shipping-rate", { cache: "no-store" });
+				const d = await r.json();
+				if (r.ok && typeof d?.amountCzk === "number") {
+					setShippingFee(Math.max(0, Math.round(d.amountCzk)));
+				}
+			} catch {
+				// nech 0
+			}
+		};
+		void loadRate();
+	}, [shippingMethod]);
+
 	const openPacketa = () => {
 		const w = (window as any);
 		if (!w.Packeta?.Widget) {
@@ -147,7 +168,7 @@ export default function CheckoutPage() {
 			// klientská prevence proti min. částce Stripe (10 Kč)
 			if (total() < 10) return;
 			if (discount?.percent === 100) return;
-			if (step !== 4) return;
+			if (step !== 5) return;
 			try {
 				const res = await fetch("/api/stripe/create-intent", {
 					method: "POST",
@@ -502,8 +523,66 @@ export default function CheckoutPage() {
 				</div>
 			</div>
 			)}
-			{/* Step 4: Platba */}
+			{/* Step 4: Finální souhrn (produkt + doprava + kupon) */}
 			{step === 4 && (
+			<div className="rounded-lg border border-white/10 bg-zinc-900 p-6">
+				<p className="mb-4 text-white">Souhrn před platbou</p>
+				<ul className="space-y-2">
+					{items.map((i) => (
+						<li key={`${i.productId}-${i.size ?? "nosize"}`} className="flex items-center justify-between gap-3 text-sm text-zinc-300">
+							<div className="flex items-center gap-3">
+								<div className="h-12 w-12 overflow-hidden rounded bg-black">
+									<img src={i.image ?? "/media/komunita/IMG_1082-scaled.jpg"} alt={i.name} className="h-full w-full object-cover" />
+								</div>
+								<div>
+									<div className="text-white">
+										{i.name} {i.size ? `(${i.size})` : ""}
+									</div>
+									<div className="text-xs text-zinc-400">× {i.quantity}</div>
+								</div>
+							</div>
+							<span className="text-white">{i.price * i.quantity} Kč</span>
+						</li>
+					))}
+					<li className="flex items-center justify-between gap-3 border-t border-white/10 pt-3 text-sm text-zinc-300">
+						<span>Doprava ({shippingMethod === "zasilkovna" ? "Zásilkovna" : "na adresu"})</span>
+						<span className="text-white">{shippingFee} Kč</span>
+					</li>
+				</ul>
+				<div className="mt-4">
+					<label className="mb-2 block text-sm text-zinc-300">Slevový kód (Stripe nebo věrnost 100%)</label>
+					<div className="flex items-center gap-2">
+						<input
+							value={code}
+							onChange={(e) => setCode(e.target.value)}
+							placeholder="Zadej kód"
+							className="flex-1 rounded border border-white/15 bg-black px-3 py-2 text-sm text-white placeholder:text-zinc-500"
+						/>
+						<button
+							type="button"
+							onClick={applyCode}
+							className="rounded border border-white/15 px-3 py-2 text-sm text-white hover:bg-white/10"
+						>
+							Použít
+						</button>
+					</div>
+					{codeMsg ? <p className="mt-2 text-xs text-zinc-400">{codeMsg}</p> : null}
+				</div>
+				<div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+					<span className="text-sm text-zinc-300">Celkem k platbě</span>
+					<span className="text-lg font-semibold text-white">
+						{Math.max(0, (items.reduce((s, i) => s + i.price * i.quantity, 0) * (1 - (discount?.percent ?? 0) / 100)) + shippingFee) | 0} Kč
+					</span>
+				</div>
+				<div className="mt-4 flex items-center justify-between">
+					<button onClick={() => setStep(3)} className="rounded border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">Zpět</button>
+					<button onClick={() => setStep(5)} className="rounded bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-zinc-200">Pokračovat na platbu</button>
+				</div>
+			</div>
+			)}
+
+			{/* Step 5: Platba */}
+			{step === 5 && (
 			<div className="mt-6 rounded-lg border border-white/10 bg-zinc-900 p-6">
 				<p className="mb-4 text-white">Platba</p>
 				{total() < 10 ? (
@@ -533,7 +612,7 @@ export default function CheckoutPage() {
 					)
 				)}
 				<div className="mt-4 flex items-center justify-between">
-					<button onClick={() => setStep(3)} className="rounded border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">Zpět</button>
+					<button onClick={() => setStep(4)} className="rounded border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">Zpět</button>
 				</div>
 			</div>
 			)}
