@@ -549,25 +549,6 @@ export default function CheckoutPage() {
 						<span className="text-white">{shippingFee} Kč</span>
 					</li>
 				</ul>
-				<div className="mt-4">
-					<label className="mb-2 block text-sm text-zinc-300">Slevový kód (Stripe nebo věrnost 100%)</label>
-					<div className="flex items-center gap-2">
-						<input
-							value={code}
-							onChange={(e) => setCode(e.target.value)}
-							placeholder="Zadej kód"
-							className="flex-1 rounded border border-white/15 bg-black px-3 py-2 text-sm text-white placeholder:text-zinc-500"
-						/>
-						<button
-							type="button"
-							onClick={applyCode}
-							className="rounded border border-white/15 px-3 py-2 text-sm text-white hover:bg-white/10"
-						>
-							Použít
-						</button>
-					</div>
-					{codeMsg ? <p className="mt-2 text-xs text-zinc-400">{codeMsg}</p> : null}
-				</div>
 				<div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
 					<span className="text-sm text-zinc-300">Celkem k platbě</span>
 					<span className="text-lg font-semibold text-white">
