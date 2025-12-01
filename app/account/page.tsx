@@ -13,6 +13,7 @@ import { collection, doc, getDoc, getDocs, orderBy, query, setDoc, where } from 
 
 type Order = {
 	id: string;
+	userId?: string;
 	priceTotal: number;
 	status: string;
 	createdAt?: any;
