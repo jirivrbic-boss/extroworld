@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
 import { signInAnonymously } from "firebase/auth";
 import { collection, doc, getDocs, orderBy, query, updateDoc } from "firebase/firestore";
+import Link from "next/link";
 
 type Order = {
 	id: string;
@@ -80,6 +81,20 @@ export default function AdminOrdersPage() {
 									<td className="py-2">{o.status}</td>
 									<td className="py-2">
 										<div className="flex gap-2">
+											<Link
+												href={`/order/${o.id}/invoice`}
+												target="_blank"
+												className="rounded border border-white/15 px-2 py-1 text-xs text-white hover:bg-white/10"
+											>
+												Zobrazit fakturu
+											</Link>
+											<Link
+												href={`/order/${o.id}/invoice?print=1`}
+												target="_blank"
+												className="rounded border border-white/15 px-2 py-1 text-xs text-white hover:bg-white/10"
+											>
+												Stáhnout fakturu
+											</Link>
 											<button onClick={() => setStatus(o.id, "paid")} className="rounded border border-white/15 px-2 py-1 text-xs text-white hover:bg-white/10">
 												Označit jako zaplaceno
 											</button>

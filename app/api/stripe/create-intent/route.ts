@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 			itemsAmount += price.unit_amount * qty;
 		}
 
-		// Add shipping fee automatically from Stripe Shipping Rates (e.g., Zásilkovna)
+		// Add shipping fee (default 90 CZK); for Zásilkovna prefer Stripe Shipping Rate when available
 		let shippingAmount = 0;
 		let shippingRateId: string | undefined;
 		if (shippingMethod === "zasilkovna") {
@@ -77,8 +77,13 @@ export async function POST(req: Request) {
 					}
 				}
 			} catch {
-				// ignore, shipping stays zero
+				// ignore, fallback set below
 			}
+			// Fallback na 90 Kč v haléřích
+			if (!shippingAmount) shippingAmount = 90 * 100;
+		} else {
+			// Doručení na adresu – jednotná cena 90 Kč
+			shippingAmount = 90 * 100;
 		}
 		// Spočítej celkovou částku (v haléřích)
 		let amount = itemsAmount + shippingAmount;

@@ -22,6 +22,7 @@ export default async function AdminDashboardPage() {
 				<Card title="Věrnostní pusinky" href="/admin/loyalty" />
 				<Card title="Newsletter e‑maily" href="/admin/newsletter" />
 				<Card title="Stripe kupony" href="/admin/stripe-coupons" />
+				<Card title="Faktury" href="/admin/invoices" />
 			</div>
 			<div className="mt-8">
 				<SeedTestOrder defaultUid={process.env.ADMIN_UID} />

@@ -22,6 +22,7 @@ export default function CheckoutPage() {
 	const [packetaReady, setPacketaReady] = useState(false);
 	const [packetaMsg, setPacketaMsg] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
+	const [orderError, setOrderError] = useState<string | null>(null);
 	// Slevový kód zadáváme až ve druhém shrnutí (krok 4)
 	const [code, setCode] = useState("");
 	const [codeMsg, setCodeMsg] = useState<string | null>(null);
@@ -104,21 +105,26 @@ export default function CheckoutPage() {
 		};
 	}, []);
 
-	// Načti cenu dopravy ze Stripe Shipping Rate (pro zobrazení v souhrnu)
+	// Načti/stanov cenu dopravy (pro zobrazení v souhrnu)
 	useEffect(() => {
 		const loadRate = async () => {
-			if (shippingMethod !== "zasilkovna") {
-				setShippingFee(0);
-				return;
-			}
-			try {
-				const r = await fetch("/api/stripe/shipping-rate", { cache: "no-store" });
-				const d = await r.json();
-				if (r.ok && typeof d?.amountCzk === "number") {
-					setShippingFee(Math.max(0, Math.round(d.amountCzk)));
+			// Základ: doprava 90 Kč (Zásilkovna i doručení na adresu)
+			const FALLBACK = 90;
+			if (shippingMethod === "zasilkovna") {
+				try {
+					const r = await fetch("/api/stripe/shipping-rate", { cache: "no-store" });
+					const d = await r.json();
+					if (r.ok && typeof d?.amountCzk === "number") {
+						setShippingFee(Math.max(0, Math.round(d.amountCzk)));
+						return;
+					}
+				} catch {
+					// fallthrough
 				}
-			} catch {
-				// nech 0
+				setShippingFee(FALLBACK);
+			} else {
+				// doručení na adresu
+				setShippingFee(FALLBACK);
 			}
 		};
 		void loadRate();
@@ -161,14 +167,23 @@ export default function CheckoutPage() {
 		}
 	};
 
-	// Prepare PaymentIntent for non-100% payments – až na kroku 4 a po vyplnění údajů
+	// Pomocná funkce – celková částka k platbě na klientu (Kč)
+	const computeClientPayTotal = () => {
+		const itemsTotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+		const percent = discount?.percent ?? 0;
+		const gross = itemsTotal + (shippingFee || 0);
+		const totalCzk = Math.max(0, Math.round(gross * (1 - percent / 100)));
+		return totalCzk;
+	};
+
+	// Prepare PaymentIntent for non-100% payments – až na kroku 5 a po vyplnění údajů
 	useEffect(() => {
 		const initPI = async () => {
 			if (!uid) return;
 			if (!items.length) return;
-			// klientská prevence proti min. částce Stripe (10 Kč)
-			if (total() < 10) return;
 			if (discount?.percent === 100) return;
+			// klientská prevence proti min. částce Stripe (10 Kč)
+			if (computeClientPayTotal() < 10) return;
 			if (step !== 5) return;
 			try {
 				const res = await fetch("/api/stripe/create-intent", {
@@ -250,20 +265,47 @@ export default function CheckoutPage() {
 
 	const placeOrder = async (opts?: { stripePaymentId?: string }) => {
 		if (!uid) return;
+		setOrderError(null);
 		setSubmitting(true);
 		try {
+			// Vygeneruj číslo faktury (jednoduché, unikátní dle data)
+			const now = new Date();
+			const y = String(now.getFullYear());
+			const m = String(now.getMonth() + 1).padStart(2, "0");
+			const d = String(now.getDate()).padStart(2, "0");
+			const rnd = Math.random().toString(36).slice(2, 6).toUpperCase();
+			const invoiceNumber = `INV-${y}${m}${d}-${rnd}`;
+			const customerName = `${cust.firstName ?? ""} ${cust.lastName ?? ""}`.trim();
+
 			// Create order
 			const orderRef = await addDoc(collection(db, "orders"), {
 				userId: uid,
 				items,
+				customer: {
+					firstName: cust.firstName,
+					lastName: cust.lastName,
+					email: cust.email,
+					phone: cust.phone
+				},
+				billingAddress: billing,
+				shippingAddress:
+					shippingMethod === "address"
+						? (ship.sameAsBilling
+							? { street: billing.street, city: billing.city, zip: billing.zip, country: billing.country }
+							: { street: ship.street, city: ship.city, zip: ship.zip, country: ship.country })
+						: null,
 				shippingMethod,
 				shipping: {
 					method: shippingMethod,
 					packeta
 				},
-				priceTotal: total(),
+				// Cena v objednávce včetně dopravy a slevy
+				priceTotal: computeClientPayTotal(),
+				discountPercent: discount?.percent ?? 0,
 				stripePaymentId: opts?.stripePaymentId ?? null,
 				status: discount?.percent === 100 || opts?.stripePaymentId ? "paid" : "pending",
+				invoiceNumber,
+				customerName,
 				createdAt: serverTimestamp()
 			});
 
@@ -309,7 +351,14 @@ export default function CheckoutPage() {
 			}
 
 			clear();
-			router.push(`/order/${orderRef.id}${opts?.stripePaymentId ? "?paid=1" : ""}`);
+			// Po zaplacení/100% slevě přesměruj na potvrzení objednávky (detail), kde je odkaz na fakturu
+			if (discount?.percent === 100 || opts?.stripePaymentId) {
+				router.push(`/order/${orderRef.id}?paid=1`);
+			} else {
+				router.push(`/order/${orderRef.id}`);
+			}
+		} catch (e: any) {
+			setOrderError(e?.message || "Objednávku se nepodařilo dokončit.");
 		} finally {
 			setSubmitting(false);
 		}
@@ -582,9 +631,28 @@ export default function CheckoutPage() {
 					</p>
 				) : null}
 				{discount?.percent === 100 ? (
-					<button disabled={submitting} onClick={() => placeOrder()} className="mt-4 w-full rounded bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-70">
+					<>
+					<button
+						disabled={
+							submitting ||
+							!cust.email ||
+							!cust.firstName ||
+							!cust.lastName ||
+							!cust.phone ||
+							(shippingMethod === "zasilkovna" && !packeta)
+						}
+						onClick={() => placeOrder()}
+						className="mt-4 w-full rounded bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-70"
+					>
 						Dokončit (100% sleva)
 					</button>
+					{(shippingMethod === "zasilkovna" && !packeta) || !cust.email || !cust.firstName || !cust.lastName || !cust.phone ? (
+						<p className="mt-2 text-sm text-amber-300">
+							Vyplň prosím kontaktní údaje a vyber výdejní místo Zásilkovny.
+						</p>
+					) : null}
+					{orderError ? <p className="mt-2 text-sm text-red-400">{orderError}</p> : null}
+					</>
 				) : (
 					clientSecret && stripePromise && (
 						<Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: "night" } }}>
@@ -596,7 +664,7 @@ export default function CheckoutPage() {
 									!!cust.lastName &&
 									!!cust.phone &&
 									(shippingMethod !== "zasilkovna" || !!packeta) &&
-									total() >= 10
+									computeClientPayTotal() >= 10
 								}
 							/>
 						</Elements>

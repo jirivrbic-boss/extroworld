@@ -46,21 +46,58 @@ export default function AccountPage() {
 					} else {
 						setLoyalty((userSnap.data() as any).loyaltyPoints ?? 0);
 					}
-					const qOrders = query(
-						collection(db, "orders"),
-						where("userId", "==", u.uid),
-						orderBy("createdAt", "desc")
-					);
-					const oSnap = await getDocs(qOrders);
+					// 1) Primárně podle userId
 					const list: Order[] = [];
-					oSnap.forEach((d) => {
-						const data = d.data() as any;
-						list.push({
-							id: d.id,
-							priceTotal: data.priceTotal,
-							status: data.status,
-							createdAt: data.createdAt
+					{
+						const qOrders = query(collection(db, "orders"), where("userId", "==", u.uid));
+						const oSnap = await getDocs(qOrders);
+						oSnap.forEach((d) => {
+							const data = d.data() as any;
+							list.push({
+								id: d.id,
+								priceTotal: data.priceTotal,
+								status: data.status,
+								createdAt: data.createdAt
+							});
 						});
+					}
+					// 2) Záloha: pokud nic, zkus podle e‑mailu v objednávce (starší objednávky bez userId)
+					if (list.length === 0 && u.email) {
+						try {
+							const qByEmail = query(collection(db, "orders"), where("customer.email", "==", u.email));
+							const s2 = await getDocs(qByEmail);
+							s2.forEach((d) => {
+								const data = d.data() as any;
+								list.push({
+									id: d.id,
+									priceTotal: data.priceTotal,
+									status: data.status,
+									createdAt: data.createdAt
+								});
+							});
+						} catch {
+							// ignoruj, pokud pole neexistuje
+						}
+					}
+					// Pokud některé nalezené objednávky nemají userId, doplň ho (migrace starších záznamů)
+					try {
+						const toFix = list.filter((o) => !o?.userId);
+						// k zápisu potřebujeme dokumenty znovu načíst kvůli jejich existenci – šetříme zápisy (best-effort)
+						for (const o of toFix) {
+							try {
+								await setDoc(doc(db, "orders", o.id), { userId: u.uid }, { merge: true });
+							} catch {
+								// best-effort, ignoruj
+							}
+						}
+					} catch {
+						// ignore
+					}
+					// Seřaď lokálně podle createdAt (desc), abychom nemuseli vytvářet kompozitní index
+					list.sort((a, b) => {
+						const aSec = (a.createdAt?.seconds ?? 0) as number;
+						const bSec = (b.createdAt?.seconds ?? 0) as number;
+						return bSec - aSec;
 					});
 					setOrders(list);
 				} else {

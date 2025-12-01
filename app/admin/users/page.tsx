@@ -76,7 +76,7 @@ export default function AdminUsersPage() {
 							{list.map((u) => (
 								<tr key={u.id} className="border-t border-white/10">
 									<td className="py-2">{u.id}</td>
-									<td className="py-2">{u.email}</td>
+									<td className="py-2">{u.email || "—"}</td>
 									<td className="py-2">{u.loyaltyPoints}</td>
 									<td className="py-2">
 										<div className="flex gap-2">
