@@ -75,10 +75,10 @@ export default function NewsletterPopup() {
 				</div>
 				<div className="p-6">
 					<div className="flex items-start justify-between">
-						<h3 className="text-xl font-semibold text-white">Unlock free gift</h3>
+						<h3 className="text-xl font-semibold text-white">Přihlaš se k odběru novinek</h3>
 						<button onClick={close} className="rounded px-2 py-1 text-sm text-zinc-400 hover:bg-white/10">✕</button>
 					</div>
-					<p className="mt-1 text-sm text-zinc-400">Získej dárek k první objednávce. Přihlas se k newsletteru.</p>
+					<p className="mt-1 text-sm text-zinc-400">Získej informace o nových dropch, slevách a speciálních akcích přímo do e‑mailu.</p>
 					<form onSubmit={submit} className="mt-4 grid gap-3">
 						<input
 							placeholder="Tvoje jméno (volitelné)"
