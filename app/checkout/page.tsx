@@ -22,8 +22,6 @@ export default function CheckoutPage() {
 	const [packetaReady, setPacketaReady] = useState(false);
 	const [packetaMsg, setPacketaMsg] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
-	const [code, setCode] = useState("");
-	const [codeMsg, setCodeMsg] = useState<string | null>(null);
 	const router = useRouter();
 	const [clientSecret, setClientSecret] = useState<string | null>(null);
 	const [shippingFee, setShippingFee] = useState<number>(0); // Kč
@@ -205,45 +203,6 @@ export default function CheckoutPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [uid, JSON.stringify(items), discount?.percent, shippingMethod, packeta?.id, step, billing.street, ship.street]);
 
-	const applyCode = async () => {
-		setCodeMsg(null);
-		const trimmed = code.trim().toUpperCase();
-		if (!trimmed) {
-			setCodeMsg("Zadej kód.");
-			return;
-		}
-		// 1) Věrnostní 100% kód (vázaný na uživatele)
-		if (uid) {
-			const qC = query(
-				collection(db, "loyaltyCodes"),
-				where("userId", "==", uid),
-				where("code", "==", trimmed),
-				where("used", "==", false)
-			);
-			const cSnap = await getDocs(qC);
-			if (!cSnap.empty) {
-				applyDiscount({ code: trimmed, percent: 100 });
-				setCodeMsg("Kód použit. Sleva 100% aplikována.");
-				return;
-			}
-		}
-		// 2) Stripe promo kód (procenta)
-		try {
-			const r = await fetch("/api/stripe/promo/validate", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ code: trimmed })
-			});
-			const d = await r.json();
-			if (r.ok && d?.ok && d?.percent > 0) {
-				applyDiscount({ code: trimmed, percent: Math.min(100, Math.max(1, Number(d.percent))) });
-				setCodeMsg(`Kód použit. Sleva ${d.percent}% aplikována.`);
-				return;
-			}
-		} catch {}
-		setCodeMsg("Kód není platný.");
-	};
-
 	const placeOrder = async (opts?: { stripePaymentId?: string }) => {
 		if (!uid) return;
 		setSubmitting(true);
@@ -394,25 +353,6 @@ export default function CheckoutPage() {
 			{step === 1 && (
 			<div className="rounded-lg border border-white/10 bg-zinc-900 p-6">
 				<p className="mb-4 text-white">Souhrn</p>
-				<div className="mb-4">
-					<label className="mb-2 block text-sm text-zinc-300">Slevový kód (věrnost 100%)</label>
-					<div className="flex items-center gap-2">
-						<input
-							value={code}
-							onChange={(e) => setCode(e.target.value)}
-							placeholder="EXTRO100-XXXXXX"
-							className="flex-1 rounded border border-white/15 bg-black px-3 py-2 text-sm text-white placeholder:text-zinc-500"
-						/>
-						<button
-							type="button"
-							onClick={applyCode}
-							className="rounded border border-white/15 px-3 py-2 text-sm text-white hover:bg-white/10"
-						>
-							Použít
-						</button>
-					</div>
-					{codeMsg ? <p className="mt-2 text-xs text-zinc-400">{codeMsg}</p> : null}
-				</div>
 				<ul className="space-y-2">
 					{items.map((i) => (
 						<li key={`${i.productId}-${i.size ?? "nosize"}`} className="flex items-center justify-between gap-3 text-sm text-zinc-300">
