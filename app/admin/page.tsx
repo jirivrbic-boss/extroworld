@@ -19,6 +19,7 @@ export default async function AdminDashboardPage() {
 				<Card title="Produkty" href="/admin/products" />
 				<Card title="Uživatelé" href="/admin/users" />
 				<Card title="Věrnostní pusinky" href="/admin/loyalty" />
+				<Card title="Newsletter e‑maily" href="/admin/newsletter" />
 			</div>
 			<form action="/api/admin/logout" method="POST" className="mt-8">
 				<button className="rounded border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">
