@@ -163,39 +163,49 @@ export default function AdminNewsletterPage() {
 				) : list.length === 0 ? (
 					<p className="text-sm text-zinc-400">Žádné záznamy.</p>
 				) : (
-					<table className="w-full text-left text-sm text-zinc-300">
-						<thead className="text-zinc-400">
-							<tr>
-								<th className="py-2">
-									<label className="inline-flex items-center gap-2">
-										<input type="checkbox" checked={allChecked} onChange={toggleAll} />
-										<span>Vybrat</span>
-									</label>
-								</th>
-								<th className="py-2">E‑mail</th>
-								<th className="py-2">Jméno</th>
-								<th className="py-2">Zdroj</th>
-								<th className="py-2">Segmenty</th>
-							</tr>
-						</thead>
-						<tbody>
-							{list.map((s) => (
-								<tr key={s.id} className="border-t border-white/10">
-									<td className="py-2">
-										<input
-											type="checkbox"
-											checked={selected.has(s.id)}
-											onChange={() => toggleOne(s.id)}
-										/>
-									</td>
-									<td className="py-2">{s.email}</td>
-									<td className="py-2">{s.name || "-"}</td>
-									<td className="py-2">{s.source || "-"}</td>
-									<td className="py-2">{(s.segments ?? []).join(", ")}</td>
+					<>
+						<table className="w-full text-left text-sm text-zinc-300">
+							<thead className="text-zinc-400">
+								<tr>
+									<th className="py-2">
+										<label className="inline-flex items-center gap-2">
+											<input type="checkbox" checked={allChecked} onChange={toggleAll} />
+											<span>Vybrat</span>
+										</label>
+									</th>
+									<th className="py-2">E‑mail</th>
+									<th className="py-2">Jméno</th>
+									<th className="py-2">Zdroj</th>
+									<th className="py-2">Segmenty</th>
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{list.map((s) => (
+									<tr key={s.id} className="border-t border-white/10">
+										<td className="py-2">
+											<input
+												type="checkbox"
+												checked={selected.has(s.id)}
+												onChange={() => toggleOne(s.id)}
+											/>
+										</td>
+										<td className="py-2">{s.email}</td>
+										<td className="py-2">{s.name || "-"}</td>
+										<td className="py-2">{s.source || "-"}</td>
+										<td className="py-2">{(s.segments ?? []).join(", ")}</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+						<div className="mt-4 flex items-center gap-2">
+							<button onClick={copySelected} disabled={!selected.size} className="rounded border border-white/15 px-3 py-1 text-xs text-white hover:bg-white/10 disabled:opacity-60">
+								Kopírovat vybrané
+							</button>
+							<button onClick={() => copyText(allEmailsText)} disabled={!list.length} className="rounded border border-white/15 px-3 py-1 text-xs text-white hover:bg-white/10 disabled:opacity-60">
+								Kopírovat vše
+							</button>
+						</div>
+					</>
 				)}
 			</div>
 		</div>

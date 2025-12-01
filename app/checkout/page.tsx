@@ -194,7 +194,7 @@ export default function CheckoutPage() {
 		// 1) Věrnostní 100% kód (vázaný na uživatele)
 		if (uid) {
 			const qC = query(
-				c ollection(db, "loyaltyCodes"),
+				collection(db, "loyaltyCodes"),
 				where("userId", "==", uid),
 				where("code", "==", trimmed),
 				where("used", "==", false)
