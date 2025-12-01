@@ -22,6 +22,9 @@ export default function CheckoutPage() {
 	const [packetaReady, setPacketaReady] = useState(false);
 	const [packetaMsg, setPacketaMsg] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
+	// Slevový kód zadáváme až ve druhém shrnutí (krok 4)
+	const [code, setCode] = useState("");
+	const [codeMsg, setCodeMsg] = useState<string | null>(null);
 	const router = useRouter();
 	const [clientSecret, setClientSecret] = useState<string | null>(null);
 	const [shippingFee, setShippingFee] = useState<number>(0); // Kč
@@ -203,6 +206,48 @@ export default function CheckoutPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [uid, JSON.stringify(items), discount?.percent, shippingMethod, packeta?.id, step, billing.street, ship.street]);
 
+	// Aplikace slevového kódu (Stripe promo nebo 100% věrnost)
+	const applyCode = async () => {
+		setCodeMsg(null);
+		const trimmed = code.trim().toUpperCase();
+		if (!trimmed) {
+			setCodeMsg("Zadej kód.");
+			return;
+		}
+		// 1) Věrnostní 100% kód (navázaný na uživatele)
+		if (uid) {
+			const qC = query(
+				collection(db, "loyaltyCodes"),
+				where("userId", "==", uid),
+				where("code", "==", trimmed),
+				where("used", "==", false)
+			);
+			const cSnap = await getDocs(qC);
+			if (!cSnap.empty) {
+				applyDiscount({ code: trimmed, percent: 100 });
+				setCodeMsg("Kód použit. Sleva 100% aplikována.");
+				return;
+			}
+		}
+		// 2) Stripe promo kód (procenta)
+		try {
+			const r = await fetch("/api/stripe/promo/validate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ code: trimmed })
+			});
+			const d = await r.json();
+			if (r.ok && d?.ok && d?.percent > 0) {
+				applyDiscount({ code: trimmed, percent: Math.min(100, Math.max(1, Number(d.percent))) });
+				setCodeMsg(`Kód použit. Sleva ${d.percent}% aplikována.`);
+				return;
+			}
+		} catch {
+			// ignore
+		}
+		setCodeMsg("Kód není platný.");
+	};
+
 	const placeOrder = async (opts?: { stripePaymentId?: string }) => {
 		if (!uid) return;
 		setSubmitting(true);
@@ -375,6 +420,25 @@ export default function CheckoutPage() {
 						</li>
 					))}
 				</ul>
+				<div className="mt-4">
+					<label className="mb-2 block text-sm text-zinc-300">Slevový kód (Stripe nebo věrnost 100%)</label>
+					<div className="flex items-center gap-2">
+						<input
+							value={code}
+							onChange={(e) => setCode(e.target.value)}
+							placeholder="Zadej kód"
+							className="flex-1 rounded border border-white/15 bg-black px-3 py-2 text-sm text-white placeholder:text-zinc-500"
+						/>
+						<button
+							type="button"
+							onClick={applyCode}
+							className="rounded border border-white/15 px-3 py-2 text-sm text-white hover:bg-white/10"
+						>
+							Použít
+						</button>
+					</div>
+					{codeMsg ? <p className="mt-2 text-xs text-zinc-400">{codeMsg}</p> : null}
+				</div>
 				<div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
 					<span className="text-sm text-zinc-300">Celkem</span>
 					<span className="text-lg font-semibold text-white">{total()} Kč</span>
