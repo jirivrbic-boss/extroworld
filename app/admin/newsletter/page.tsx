@@ -18,6 +18,7 @@ export default function AdminNewsletterPage() {
 	const [list, setList] = useState<Sub[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [selected, setSelected] = useState<Set<string>>(new Set());
 
 	useEffect(() => {
 		const boot = async () => {
@@ -71,6 +72,17 @@ export default function AdminNewsletterPage() {
 		return rows.join("\n");
 	}, [list]);
 
+	const selectedEmailsText = useMemo(() => {
+		if (!selected.size) return "";
+		const map = new Map<string, boolean>();
+		for (const s of list) {
+			if (selected.has(s.id) && s.email) {
+				map.set(String(s.email).trim().toLowerCase(), true);
+			}
+		}
+		return Array.from(map.keys()).join("\n");
+	}, [selected, list]);
+
 	const download = () => {
 		const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
 		const url = URL.createObjectURL(blob);
@@ -83,6 +95,41 @@ export default function AdminNewsletterPage() {
 		URL.revokeObjectURL(url);
 	};
 
+	const copySelected = async () => {
+		if (!selectedEmailsText) return;
+		try {
+			await navigator.clipboard.writeText(selectedEmailsText);
+			// volitelná vizuální odezva
+			alert("Zkopírováno do schránky.");
+		} catch {
+			// fallback
+			const ta = document.createElement("textarea");
+			ta.value = selectedEmailsText;
+			document.body.appendChild(ta);
+			ta.select();
+			document.execCommand("copy");
+			ta.remove();
+			alert("Zkopírováno do schránky.");
+		}
+	};
+
+	const allChecked = useMemo(() => list.length > 0 && selected.size === list.length, [list, selected]);
+	const toggleAll = () => {
+		if (allChecked) {
+			setSelected(new Set());
+		} else {
+			setSelected(new Set(list.map((s) => s.id)));
+		}
+	};
+	const toggleOne = (id: string) => {
+		setSelected((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	};
+
 	return (
 		<div>
 			<h1 className="mb-4 text-xl font-semibold text-white">Newsletter — přihlášení</h1>
@@ -92,6 +139,9 @@ export default function AdminNewsletterPage() {
 				</button>
 				<button onClick={download} disabled={!list.length} className="rounded border border-white/15 px-3 py-1 text-xs text-white hover:bg-white/10 disabled:opacity-60">
 					Export CSV
+				</button>
+				<button onClick={copySelected} disabled={!selected.size} className="rounded border border-white/15 px-3 py-1 text-xs text-white hover:bg-white/10 disabled:opacity-60">
+					Kopírovat vybrané
 				</button>
 			</div>
 			<div className="rounded border border-white/10 bg-zinc-900 p-4">
@@ -105,6 +155,12 @@ export default function AdminNewsletterPage() {
 					<table className="w-full text-left text-sm text-zinc-300">
 						<thead className="text-zinc-400">
 							<tr>
+								<th className="py-2">
+									<label className="inline-flex items-center gap-2">
+										<input type="checkbox" checked={allChecked} onChange={toggleAll} />
+										<span>Vybrat</span>
+									</label>
+								</th>
 								<th className="py-2">E‑mail</th>
 								<th className="py-2">Jméno</th>
 								<th className="py-2">Zdroj</th>
@@ -114,6 +170,13 @@ export default function AdminNewsletterPage() {
 						<tbody>
 							{list.map((s) => (
 								<tr key={s.id} className="border-t border-white/10">
+									<td className="py-2">
+										<input
+											type="checkbox"
+											checked={selected.has(s.id)}
+											onChange={() => toggleOne(s.id)}
+										/>
+									</td>
 									<td className="py-2">{s.email}</td>
 									<td className="py-2">{s.name || "-"}</td>
 									<td className="py-2">{s.source || "-"}</td>
