@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
 import ProductCard, { type Product } from "@/components/ProductCard";
 import Link from "next/link";
 import { getWishlistProductIds } from "@/lib/wishlist";
@@ -32,18 +31,23 @@ export default function WishlistPage() {
 			try {
 				const ids = await getWishlistProductIds(uid);
 				const list: Product[] = [];
+				// Načti detaily produktů ze Stripe API (ne z Firestore)
 				for (const id of ids) {
-					const snap = await getDoc(doc(db, "products", id));
-					if (snap.exists()) {
-						const d = snap.data() as any;
+					try {
+						const res = await fetch(`/api/stripe/products/${id}`, { cache: "no-store" });
+						if (!res.ok) continue;
+						const d = await res.json();
 						list.push({
-							id: snap.id,
+							id: d.id,
 							name: d.name,
 							price: d.price,
 							images: d.images,
 							stock: d.stock,
-							category: d.category
+							category: d.category,
+							priceId: d.priceId
 						});
+					} catch {
+						// ignore bad id
 					}
 				}
 				setProducts(list);
