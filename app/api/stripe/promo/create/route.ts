@@ -23,15 +23,23 @@ export async function POST(req: Request) {
 			percent_off: pct,
 			duration: "once"
 		});
-		// Create promotion code with provided code
-		const promo = await stripe.promotionCodes.create(
-			{
-				// některé verze typů Stripe mohou mít odlišnou deklaraci – přetypujeme
-				coupon: coupon.id,
-				code: code.trim().toUpperCase(),
-				active: true
-			} as any
-		);
+		// Create promotion code (přímý HTTP call kvůli rozdílům v typových definicích)
+		const form = new URLSearchParams();
+		form.set("coupon", coupon.id);
+		form.set("code", code.trim().toUpperCase());
+		form.set("active", "true");
+		const resp = await fetch("https://api.stripe.com/v1/promotion_codes", {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+				"Content-Type": "application/x-www-form-urlencoded"
+			},
+			body: form
+		});
+		const promo = await resp.json();
+		if (!resp.ok) {
+			throw new Error(promo?.error?.message || "Stripe promotion code create failed");
+		}
 		return NextResponse.json({
 			ok: true,
 			couponId: coupon.id,
