@@ -142,11 +142,11 @@ export default function AccountPage() {
 					<div className="rounded-lg border border-white/10 bg-zinc-900 p-6">
 						<p className="mb-2 flex items-center gap-2 text-sm text-zinc-400">
 							Věrnostní pusinky
-							<img src="/media/pusa.png" alt="pusa" className="h-4 w-4" />
+							<img src="/media/ikona webu.png" alt="ikona webu" className="h-4 w-4" />
 						</p>
 						<p className="flex items-center gap-2 text-2xl font-semibold text-white">
 							{loyalty} pusinek
-							<img src="/media/pusa.png" alt="pusa" className="h-6 w-6" />
+							<img src="/media/ikona webu.png" alt="ikona webu" className="h-6 w-6" />
 						</p>
 						<p className="mt-2 text-sm text-zinc-400">
 							1 pusinka = 1 Kč utracené. Po dosažení 5000 pusinek posíláme 100% slevový kód na e‑mail.
