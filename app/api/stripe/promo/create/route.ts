@@ -24,11 +24,14 @@ export async function POST(req: Request) {
 			duration: "once"
 		});
 		// Create promotion code with provided code
-		const promo = await stripe.promotionCodes.create({
-			coupon: coupon.id,
-			code: code.trim().toUpperCase(),
-			active: true
-		});
+		const promo = await stripe.promotionCodes.create(
+			{
+				// některé verze typů Stripe mohou mít odlišnou deklaraci – přetypujeme
+				coupon: coupon.id,
+				code: code.trim().toUpperCase(),
+				active: true
+			} as any
+		);
 		return NextResponse.json({
 			ok: true,
 			couponId: coupon.id,
