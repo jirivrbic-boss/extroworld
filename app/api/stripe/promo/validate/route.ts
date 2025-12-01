@@ -21,10 +21,12 @@ export async function POST(req: Request) {
 			expand: ["data.coupon"]
 		});
 		const promo = list.data?.[0] ?? null;
-		if (!promo || !promo.coupon) {
+		// Typy Stripe v některých verzích nemají 'coupon' v PromotionCode – použijeme safe cast
+		const coupon: any = (promo as any)?.coupon;
+		if (!promo || !coupon) {
 			return NextResponse.json({ ok: false, found: false }, { status: 404 });
 		}
-		const pct = (promo.coupon as Stripe.Coupon).percent_off ?? null;
+		const pct = typeof coupon === "object" ? (coupon.percent_off ?? null) : null;
 		if (!pct || pct <= 0) {
 			return NextResponse.json({ ok: false, found: true, percent: 0 }, { status: 404 });
 		}
