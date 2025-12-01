@@ -96,8 +96,19 @@ export default function OrderDetailPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <Link href={`/order/${order.id}/invoice`} className="rounded border border-white/15 px-3 py-2 text-sm text-white hover:bg-white/10">
-          Zobrazit / stáhnout fakturu
+        <Link
+          href={`/order/${order.id}/invoice`}
+          target="_blank"
+          className="rounded border border-white/15 px-3 py-2 text-sm text-white hover:bg-white/10"
+        >
+          Zobrazit fakturu
+        </Link>
+        <Link
+          href={`/order/${order.id}/invoice?print=1`}
+          target="_blank"
+          className="rounded border border-white/15 px-3 py-2 text-sm text-white hover:bg-white/10"
+        >
+          Stáhnout fakturu
         </Link>
         <Link href="/account" className="text-sm text-zinc-300 underline hover:text-white">Zpět na účet</Link>
       </div>

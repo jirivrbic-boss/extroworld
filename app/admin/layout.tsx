@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import AdminAuth from "@/components/AdminAuth";
+import { redirect } from "next/navigation";
+import { createHmac } from "crypto";
 
 export const metadata: Metadata = {
 	title: "Admin — EXTROWORLD"
@@ -9,7 +11,14 @@ export const metadata: Metadata = {
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
 	const cookieStore = await cookies();
-	const isAuthed = cookieStore.get("extro_admin")?.value === "1";
+	const token = cookieStore.get("extro_admin")?.value || "";
+	const signature = cookieStore.get("extro_admin_sig")?.value || "";
+	const secret = process.env.ADMIN_SIGNING_SECRET || process.env.STRIPE_WEBHOOK_SECRET || "";
+	const expected = secret ? createHmac("sha256", secret).update(token).digest("hex") : "";
+	const isAuthed = Boolean(token) && Boolean(secret) && signature === expected;
+	if (!isAuthed) {
+		redirect("/admin/login");
+	}
 	return (
 		<div className="mx-auto max-w-7xl px-4 py-8">
 			{/* Zajistí přihlášení k Firebase (anonymně) dřív, než proběhnou jakékoliv dotazy na Firestore */}

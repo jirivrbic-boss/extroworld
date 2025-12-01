@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHmac } from "crypto";
 
 export const runtime = "nodejs";
 
@@ -17,7 +18,17 @@ export async function POST(request: Request) {
 		// 1) ENV admin (přímé porovnání)
 		if (ADMIN_USER && ADMIN_PASS && username === ADMIN_USER && password === ADMIN_PASS) {
 			const res = NextResponse.json({ ok: true, mode: "env" });
-			res.cookies.set("extro_admin", "1", {
+			const token = "ok";
+			const secret = process.env.ADMIN_SIGNING_SECRET || process.env.STRIPE_WEBHOOK_SECRET || "";
+			const sig = createHmac("sha256", secret).update(token).digest("hex");
+			res.cookies.set("extro_admin", token, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === "production",
+				sameSite: "lax",
+				path: "/",
+				maxAge: 60 * 60 * 4
+			});
+			res.cookies.set("extro_admin_sig", sig, {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === "production",
 				sameSite: "lax",
@@ -48,7 +59,17 @@ export async function POST(request: Request) {
 					const emailOk = ADMIN_EMAIL ? email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() : true;
 					if (uidOk && emailOk) {
 						const res = NextResponse.json({ ok: true, mode: "firebase" });
-						res.cookies.set("extro_admin", "1", {
+						const token = "ok";
+						const secret = process.env.ADMIN_SIGNING_SECRET || process.env.STRIPE_WEBHOOK_SECRET || "";
+						const sig = createHmac("sha256", secret).update(token).digest("hex");
+						res.cookies.set("extro_admin", token, {
+							httpOnly: true,
+							secure: process.env.NODE_ENV === "production",
+							sameSite: "lax",
+							path: "/",
+							maxAge: 60 * 60 * 4
+						});
+						res.cookies.set("extro_admin_sig", sig, {
 							httpOnly: true,
 							secure: process.env.NODE_ENV === "production",
 							sameSite: "lax",
