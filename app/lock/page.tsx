@@ -55,6 +55,10 @@ export default function LockPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Schovej globální navigaci a zápatí pouze na lock stránce */}
+      <style jsx global>{`
+        nav, footer { display: none !important; }
+      `}</style>
       <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-4 py-10">
         <img
           src="/media/logo extroworld 3d.gif"
