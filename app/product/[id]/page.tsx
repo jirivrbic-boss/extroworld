@@ -144,7 +144,11 @@ export default function ProductDetailPage() {
 									<button
 										key={s}
 										onClick={() => setSize(s)}
-										className={`rounded border px-3 py-1 text-sm ${size === s ? "border-black bg-black text-white" : "border-black/20 text-black hover:bg-black/5"}`}
+										className={`rounded px-3 py-1 text-sm font-semibold border ${
+											size === s
+												? "bg-red-600 border-red-600 text-white"
+												: "border-red-600 text-red-600 hover:bg-red-50"
+										}`}
 									>
 										{s}
 									</button>
