@@ -56,7 +56,7 @@ export default function AdminOrdersPage() {
 	return (
 		<div>
 			<h1 className="mb-4 text-xl font-semibold text-white">Objednávky</h1>
-			<div className="rounded border border-white/10 bg-zinc-900 p-4">
+			<div className="rounded border border-white/10 bg-zinc-900 p-4 overflow-x-auto">
 				{loading ? (
 					<p className="text-sm text-zinc-400">Načítám…</p>
 				) : list.length === 0 ? (

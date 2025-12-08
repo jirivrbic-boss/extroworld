@@ -83,7 +83,7 @@ export default function AdminInvoicesPage() {
           Obnovit
         </button>
       </div>
-      <div className="rounded border border-white/10 bg-zinc-900 p-4">
+      <div className="rounded border border-white/10 bg-zinc-900 p-4 overflow-x-auto">
         {loading ? (
           <p className="text-sm text-zinc-400">Načítám…</p>
         ) : filtered.length === 0 ? (

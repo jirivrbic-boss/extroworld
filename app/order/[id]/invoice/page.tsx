@@ -49,7 +49,7 @@ export default function OrderInvoicePage() {
           <div className="text-sm">Datum vystavení: {issuedDate}</div>
         </div>
         <button
-          className="print:hidden rounded border px-3 py-2 text-sm"
+          className="print:hidden w-full rounded border px-3 py-2 text-sm sm:w-auto"
           onClick={() => window.print()}
         >
           Stáhnout jako PDF

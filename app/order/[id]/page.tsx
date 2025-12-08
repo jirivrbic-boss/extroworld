@@ -95,22 +95,22 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <Link
           href={`/order/${order.id}/invoice`}
           target="_blank"
-          className="rounded border border-white/15 px-3 py-2 text-sm text-white hover:bg-white/10"
+          className="w-full rounded border border-white/15 px-3 py-2 text-center text-sm text-white hover:bg-white/10 sm:w-auto"
         >
           Zobrazit fakturu
         </Link>
         <Link
           href={`/order/${order.id}/invoice?print=1`}
           target="_blank"
-          className="rounded border border-white/15 px-3 py-2 text-sm text-white hover:bg-white/10"
+          className="w-full rounded border border-white/15 px-3 py-2 text-center text-sm text-white hover:bg-white/10 sm:w-auto"
         >
           Stáhnout fakturu
         </Link>
-        <Link href="/account" className="text-sm text-zinc-300 underline hover:text-white">Zpět na účet</Link>
+        <Link href="/account" className="text-center text-sm text-zinc-300 underline hover:text-white sm:text-left">Zpět na účet</Link>
       </div>
     </div>
   );
