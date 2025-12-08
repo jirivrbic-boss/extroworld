@@ -25,6 +25,29 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Mobile readability: make text white inside dark containers */
+@media (max-width: 640px) {
+  .bg-black,
+  .bg-zinc-900 {
+    color: #ffffff;
+  }
+  .bg-black .text-black,
+  .bg-black .text-zinc-900,
+  .bg-black .text-zinc-800,
+  .bg-black .text-zinc-700,
+  .bg-black .text-zinc-600,
+  .bg-zinc-900 .text-black,
+  .bg-zinc-900 .text-zinc-900,
+  .bg-zinc-900 .text-zinc-800,
+  .bg-zinc-900 .text-zinc-700,
+  .bg-zinc-900 .text-zinc-600 {
+    color: #ffffff !important;
+  }
+  header.bg-black a {
+    color: #ffffff !important;
+  }
+}
+
 /* BubbleMenu styles (global) */
 .bubble-menu {
   left: 0;
