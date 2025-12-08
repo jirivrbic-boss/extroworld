@@ -47,6 +47,7 @@ export default function InstagramShowcase({ items }: { items: Item[] }) {
   // jednoduchá rotace bez „morphingu“ – plynulé přes CSS transitions
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [isSm, setIsSm] = useState(false);
   const n = items.length;
   const get = (offset: number) => {
     if (n === 0) return undefined;
@@ -68,10 +69,25 @@ export default function InstagramShowcase({ items }: { items: Item[] }) {
     return () => window.clearInterval(t);
   }, [n, paused]);
 
+  // Responsive – zmenši karty na mobilech a zabraň horizontálnímu posuvu
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const apply = () => setIsSm(mq.matches);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+  const scale = isSm ? 0.7 : 1;
+  const wCenter = 420 * scale;
+  const wNear = 320 * scale;
+  const wFar = 260 * scale;
+  const offNear = 360 * scale;
+  const offFar = 520 * scale;
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-16" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <h2 className="mb-6 text-xl font-semibold text-white text-center">Sleduj nás</h2>
-      <div className="relative h-[70vh] w-full">
+      <div className="relative h-[70vh] w-full overflow-hidden">
         {/* druhá vrstva (nejzadnější) */}
         {left2 ? (
           <Card
@@ -79,8 +95,8 @@ export default function InstagramShowcase({ items }: { items: Item[] }) {
             z={5}
             className="aspect-[3/4]"
             style={{
-              width: 260,
-              left: "calc(50% - 520px)",
+              width: wFar,
+              left: `calc(50% - ${offFar}px)`,
               top: "12%",
               transform: "translateX(-50%) scale(0.9)",
               opacity: 0.6,
@@ -94,8 +110,8 @@ export default function InstagramShowcase({ items }: { items: Item[] }) {
             z={5}
             className="aspect-[3/4]"
             style={{
-              width: 260,
-              left: "calc(50% + 520px)",
+              width: wFar,
+              left: `calc(50% + ${offFar}px)`,
               top: "12%",
               transform: "translateX(-50%) scale(0.9)",
               opacity: 0.6,
@@ -111,8 +127,8 @@ export default function InstagramShowcase({ items }: { items: Item[] }) {
             z={10}
             className="aspect-[3/4]"
             style={{
-              width: 320,
-              left: "calc(50% - 360px)",
+              width: wNear,
+              left: `calc(50% - ${offNear}px)`,
               top: "6%",
               transform: "translateX(-50%) scale(0.95)",
               opacity: 0.8,
@@ -126,8 +142,8 @@ export default function InstagramShowcase({ items }: { items: Item[] }) {
             z={10}
             className="aspect-[3/4]"
             style={{
-              width: 320,
-              left: "calc(50% + 360px)",
+              width: wNear,
+              left: `calc(50% + ${offNear}px)`,
               top: "6%",
               transform: "translateX(-50%) scale(0.95)",
               opacity: 0.8,
@@ -143,7 +159,7 @@ export default function InstagramShowcase({ items }: { items: Item[] }) {
             z={20}
             className="aspect-[3/4]"
             style={{
-              width: 420,
+              width: wCenter,
               left: "50%",
               top: 0,
               transform: "translateX(-50%)",
