@@ -74,8 +74,19 @@ export default function InstagramShowcase({ items }: { items: Item[] }) {
     const mq = window.matchMedia("(max-width: 640px)");
     const apply = () => setIsSm(mq.matches);
     apply();
-    mq.addEventListener?.("change", apply);
-    return () => mq.removeEventListener?.("change", apply);
+    // Kompatibilita: starší prohlížeče/typové definice používají addListener/removeListener
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", apply);
+      return () => mq.removeEventListener?.("change", apply);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mqa = mq as any;
+      if (typeof mqa.addListener === "function") {
+        mqa.addListener(apply);
+        return () => mqa.removeListener?.(apply);
+      }
+    }
+    return;
   }, []);
   const scale = isSm ? 0.7 : 1;
   const wCenter = 420 * scale;
