@@ -155,7 +155,7 @@ export default function AccountPage() {
 					</div>
 					{error ? <p className="mb-3 text-sm text-red-400">{error}</p> : null}
 					<div className="flex items-center gap-3">
-						<button onClick={signIn} className="rounded bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-zinc-200">
+						<button onClick={signIn} className="rounded bg-white px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50">
 							Přihlásit se
 						</button>
 						<button onClick={signUp} className="rounded border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">
