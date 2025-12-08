@@ -27,7 +27,8 @@ export default function Navbar() {
 					</Link>
 				</div>
 				<div className="flex items-center justify-end gap-3">
-					<Link href="/wishlist" className="text-sm text-zinc-200 hover:text-white">
+					{/* Wishlist skrýt na telefonu – je v rozbalovacím menu (Menu) */}
+					<Link href="/wishlist" className="hidden text-sm text-zinc-200 hover:text-white md:inline">
 						Wishlist
 					</Link>
 					<Link href="/account" className="text-sm text-zinc-200 hover:text-white">
