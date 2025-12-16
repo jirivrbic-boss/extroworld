@@ -31,16 +31,9 @@ body {
   .bg-zinc-900 {
     color: #ffffff;
   }
-  .bg-black .text-black,
-  .bg-black .text-zinc-900,
-  .bg-black .text-zinc-800,
-  .bg-black .text-zinc-700,
-  .bg-black .text-zinc-600,
-  .bg-zinc-900 .text-black,
-  .bg-zinc-900 .text-zinc-900,
-  .bg-zinc-900 .text-zinc-800,
-  .bg-zinc-900 .text-zinc-700,
-  .bg-zinc-900 .text-zinc-600 {
+  /* Zesvětli tmavé texty uvnitř tmavých bloků, ale NE uvnitř prvků s bílým pozadím */
+  .bg-black :where(.text-black, .text-zinc-900, .text-zinc-800, .text-zinc-700, .text-zinc-600):not(.bg-white):not([class*="bg-white"]) ,
+  .bg-zinc-900 :where(.text-black, .text-zinc-900, .text-zinc-800, .text-zinc-700, .text-zinc-600):not(.bg-white):not([class*="bg-white"]) {
     color: #ffffff !important;
   }
   header.bg-black a {
