@@ -39,6 +39,13 @@ body {
   header.bg-black a {
     color: #ffffff !important;
   }
+  /* Výjimky: prvky s bílým pozadím musí mít tmavý text kvůli čitelnosti */
+  .bg-black :is(a,button).bg-white,
+  .bg-black :is(a,button)[class*="bg-white"],
+  .bg-zinc-900 :is(a,button).bg-white,
+  .bg-zinc-900 :is(a,button)[class*="bg-white"] {
+    color: #000000 !important;
+  }
 }
 
 /* BubbleMenu styles (global) */
